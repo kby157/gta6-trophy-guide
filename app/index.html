@@ -3,23 +3,87 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GTA VI trophy checklist</title>
+<title>Leonida Platinum Tracker — GTA VI Trophy Guide</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
-  <h1>GTA VI trophy checklist</h1>
-  <p id="progress">0 of 55 earned</p>
+<header id="topbar">
+  <div class="masthead">
+    <p class="kicker">Grand Theft Auto VI · PlayStation 5 · Offline guide &amp; tracker</p>
+    <h1>Leonida Platinum Tracker</h1>
+    <p class="standfirst">All 55 official trophies with a cited guide for each one, a five-stage roadmap to the platinum, and the one trophy published guides flag as possibly missable — flagged first, not buried.</p>
+  </div>
+  <section id="progress-panel" aria-label="Your progress">
+    <p id="progress-big">0 of 55 earned</p>
+    <p id="progress-detail">1 platinum · 2 gold · 6 silver · 46 bronze · 28 hidden · 0 online trophies</p>
+    <div id="progress-bar"><div id="progress-fill"></div></div>
+    <p id="next-hint">Next up: start with the story.</p>
+  </section>
 </header>
-<div class="controls">
-  <label>Grade <select id="grade"><option value="all">All</option><option value="platinum">Platinum</option><option value="gold">Gold</option><option value="silver">Silver</option><option value="bronze">Bronze</option></select></label>
-  <button id="export" type="button">Export progress</button>
-  <label class="import">Import progress <input id="import" type="file" accept="application/json"></label>
-</div>
-<table>
-  <thead><tr><th>Earned</th><th>Trophy</th><th>Grade</th><th>How to get it</th></tr></thead>
-  <tbody id="rows"></tbody>
-</table>
-<script type="module" src="app.js"></script>
+
+<nav id="view-tabs" aria-label="Views">
+  <button type="button" data-view="checklist" class="tab active">Checklist &amp; guides</button>
+  <button type="button" data-view="roadmap" class="tab">Roadmap &amp; missables</button>
+  <button type="button" data-view="nextup" class="tab">Next up planner</button>
+</nav>
+
+<section id="controls" aria-label="Tracker controls">
+  <label class="control grow">Search <input id="search" type="search" placeholder="Name, mission, character, place…"></label>
+  <div class="control" id="kind-filters" role="group" aria-label="Filter by kind">
+    <button type="button" data-kind="all" class="chip active">All 55</button>
+    <button type="button" data-kind="story" class="chip">Story</button>
+    <button type="button" data-kind="missable" class="chip">Missable &amp; windows</button>
+    <button type="button" data-kind="collectibles" class="chip">Collectibles</button>
+    <button type="button" data-kind="activities" class="chip">Activities</button>
+    <button type="button" data-kind="online" class="chip">Online (none)</button>
+  </div>
+  <label class="control">Grade
+    <select id="grade-filter">
+      <option value="all">All grades</option>
+      <option value="platinum">Platinum</option>
+      <option value="gold">Gold</option>
+      <option value="silver">Silver</option>
+      <option value="bronze">Bronze</option>
+    </select>
+  </label>
+  <label class="control check"><input id="spoiler-toggle" type="checkbox" checked> Spoiler protection: hide story trophies until earned</label>
+  <label class="control check"><input id="earned-toggle" type="checkbox"> Hide earned</label>
+  <div class="control buttons">
+    <button id="export-progress" type="button">Export progress</button>
+    <label class="import-label">Import progress <input id="import-progress" type="file" accept="application/json"></label>
+  </div>
+</section>
+
+<main id="checklist-view">
+  <section id="list-panel" aria-label="Trophy checklist">
+    <p id="list-summary"></p>
+    <ul id="trophy-list"></ul>
+    <p id="online-note" hidden>There are no online trophies in GTA VI: all 55 are offline and single-player (sources: Exophase list; GTABase Trophy Guide). This filter is here so that fact is checkable, not assumed.</p>
+  </section>
+  <article id="detail-panel" aria-label="Trophy guide">
+    <p class="detail-empty">Select a trophy to read its guide and its sources.</p>
+  </article>
+</main>
+
+<section id="roadmap-view" hidden>
+  <h2>Roadmap to the platinum</h2>
+  <p class="roadmap-intro">One playthrough, no difficulty setting and no mission replay, so save manually at the start of each chapter and keep cheats off (they disable trophies and saving). Published roadmaps put the platinum at roughly 200 hours and call A Long Road, the 100% trophy, the hardest on the list. Sources: GTABase Trophy Guide; PowerPyx roadmap; Push Square Trophy Guide &amp; Roadmap.</p>
+  <div id="roadmap-stages"></div>
+  <h2>Missable &amp; story-window trophies</h2>
+  <p class="roadmap-intro">Only one trophy is reported as possibly missable by the published guides: Positive Mental Attitude. Five stranger finales carry a story window instead — their chains are tied to story progress, so finish them before the endgame.</p>
+  <ul id="missable-list"></ul>
+</section>
+
+<section id="nextup-view" hidden>
+  <h2>Next up</h2>
+  <p class="roadmap-intro">Your next five trophies, in roadmap order: the possibly missable one and any open story window first, then the earliest stage you have not finished.</p>
+  <ol id="nextup-list"></ol>
+</section>
+
+<footer>
+  <p>Guides are written for this app in our own words and name their sources beside each trophy. Official names and descriptions are shown as PlayStation publishes them. List sources: Exophase and PSNProfiles. Roadmap sources: GTABase, PowerPyx and Push Square, read 2026-11-20. Where no published source pins a step down, the guide says so instead of inventing one. No Rockstar Games logo or artwork is used; the look of this app is its own.</p>
+</footer>
+
+<script type="module" src="js/main.js"></script>
 </body>
 </html>

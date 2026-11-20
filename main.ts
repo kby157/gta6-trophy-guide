@@ -14,13 +14,33 @@
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 
-import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-frontend.ts';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
 const out = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
+
+// Leonida Platinum Tracker self-check, added for this entry: refuse to hand
+// in a guide whose trophy data is incomplete, so a truncated data file can
+// never reach the gate dressed as a finished entry. It reads only the file
+// beside this program and changes nothing that is copied to the output.
+function checkTrophyDataComplete() {
+  const raw = readFileSync(join(here, 'app', 'data', 'trophies.json'), 'utf8');
+  const doc = JSON.parse(raw);
+  const trophies = Array.isArray(doc) ? doc : doc.trophies;
+  if (!Array.isArray(trophies) || trophies.length !== 55) {
+    throw new Error(`trophy data must hold exactly 55 trophies, found ${trophies?.length}`);
+  }
+  for (const trophy of trophies) {
+    if (typeof trophy.name !== 'string' || trophy.name.trim() === '') throw new Error('a trophy has no name');
+    if (typeof trophy.guide !== 'string' || trophy.guide.trim().length < 80) throw new Error(`guide too short for ${trophy.name}`);
+    if (!Array.isArray(trophy.sources) || trophy.sources.length === 0) throw new Error(`no sources cited for ${trophy.name}`);
+  }
+  return trophies.length;
+}
+const checkedTrophyCount = checkTrophyDataComplete();
 
 mkdirSync(out, { recursive: true });
 cpSync(join(here, 'app'), join(out, 'app'), { recursive: true });
@@ -34,3 +54,18 @@ writeFileSync(
   join(out, 'dossier.json'),
   buildDossier(out, { text_max_bytes: 163840, screenshots: { max: 4, max_bytes: 262144 }, app_max_files: 993, app_max_bytes: 50331648 }),
 );
+
+// Second half of this entry's self-check: the screenshots folder must hold
+// the 3 or 4 shots the gate expects, each inside its 256 KiB cap, and the
+// run log states what was actually handed in.
+function checkScreenshotsHandedIn() {
+  const dir = join(out, 'screenshots');
+  const shots = readdirSync(dir).filter((name) => /\.(png|jpe?g)$/i.test(name));
+  if (shots.length < 3 || shots.length > 4) throw new Error(`expected 3 or 4 screenshots, found ${shots.length}`);
+  for (const name of shots) {
+    if (statSync(join(dir, name)).size > 262144) throw new Error(`screenshot over 256 KiB: ${name}`);
+  }
+  return shots.length;
+}
+const handedInShotCount = checkScreenshotsHandedIn();
+console.log(`Leonida Platinum Tracker handed in: ${checkedTrophyCount} trophies, ${handedInShotCount} screenshots.`);
