@@ -1,7 +1,9 @@
-// Rendering: the checklist rows, the guide pane with its sources, the
-// roadmap stages, the missable list and the Next Up planner.
+// Rendering: the audit strip, the checklist rows with their citation
+// markers, the guide pane (numbered steps, each citing its sources, plus
+// any disagreement box), the roadmap, the Next Up planner, the stage
+// strip and the source registry.
 
-import { hasCounter } from './data.js';
+import { auditStats, citedRefsFor, hasCounter, sourceByNumber, sourceCoverage } from './data.js';
 import { shouldMaskForSpoilers } from './filters.js';
 import { ROADMAP_STAGES, missableAndWindowTrophies, missableLabel, trophiesForStage } from './roadmap.js';
 
@@ -10,6 +12,16 @@ function element(tag, className, text) {
   if (className) node.className = className;
   if (text !== undefined) node.textContent = text;
   return node;
+}
+
+export function renderAudit(doc) {
+  const audit = auditStats(doc);
+  const grades = audit.grades;
+  document.getElementById('audit-bar').textContent =
+    `AUDIT · ${audit.total} official · ${grades.platinum}P ${grades.gold}G ${grades.silver}S ${grades.bronze}B · ${audit.hidden} hidden · ` +
+    `guides citing a source ${audit.guidesCited}/${audit.total} · steps cited ${audit.citedSteps}/${audit.steps} · ` +
+    `${audit.sourceCount} sources read ${audit.readDate} · possibly missable ${audit.missable} · watch ${audit.watch} · ` +
+    `unconfirmed ${audit.unconfirmed} · sources disagree on ${audit.disagree}`;
 }
 
 export function renderProgress(trophies, store, nextUp) {
@@ -22,12 +34,27 @@ export function renderProgress(trophies, store, nextUp) {
     : 'All 55 earned — the platinum is yours.';
 }
 
+export function renderStageStrip(trophies, store) {
+  const strip = document.getElementById('stage-strip');
+  strip.replaceChildren();
+  for (const stageInfo of ROADMAP_STAGES) {
+    const inStage = trophiesForStage(trophies, stageInfo.stage);
+    const earned = inStage.filter((trophy) => store.isEarned(trophy.id)).length;
+    const cell = element('div', 'stage-cell');
+    cell.append(
+      element('span', 'stage-cell-title', `S${stageInfo.stage} ${stageInfo.short}`),
+      element('span', 'stage-cell-count', `${earned}/${inStage.length} earned`),
+    );
+    strip.append(cell);
+  }
+}
+
 export function renderChecklist(trophies, visible, view, store, onSelect) {
   const list = document.getElementById('trophy-list');
   list.replaceChildren();
   document.getElementById('list-summary').textContent =
-    `Showing ${visible.length} of ${trophies.length} trophies. Click a row for its full guide and sources; tick the box to mark it earned. Progress saves in this browser.`;
-  document.getElementById('online-note').hidden = view.kind !== 'online';
+    `Showing ${visible.length} of ${trophies.length} trophies. Click a row for its stepped guide and sources; tick the box to mark it earned. Progress saves in this browser.`;
+  document.getElementById('online-note').hidden = view.status !== 'online';
   for (const trophy of visible) {
     const isEarned = store.isEarned(trophy.id);
     const masked = shouldMaskForSpoilers(trophy, { spoilersOn: view.spoilersOn, isEarned });
@@ -50,8 +77,12 @@ export function renderChecklist(trophies, visible, view, store, onSelect) {
     grade.append(dot, document.createTextNode(`${trophy.grade}${trophy.hidden ? ' · hidden' : ''}`));
     meta.append(grade);
     if (trophy.missable) meta.append(element('span', 'flag', '⚠ POSSIBLY MISSABLE'));
-    if (trophy.story_window) meta.append(element('span', 'flag', 'STORY WINDOW'));
+    if (trophy.story_window) meta.append(element('span', 'flag', 'WATCH'));
+    if (trophy.unconfirmed) meta.append(element('span', 'flag flag-quiet', 'UNCONFIRMED'));
+    if (trophy.disagreement) meta.append(element('span', 'flag flag-quiet', 'SOURCES DISAGREE'));
     meta.append(element('span', '', `Stage ${trophy.stage} · ${trophy.kind}`));
+    const refs = citedRefsFor(trophy);
+    meta.append(element('span', 'cite-marker', `${(trophy.steps ?? []).length} steps [${refs.join('] [')}]`));
     if (hasCounter(trophy)) {
       meta.append(element('span', 'counter-pill', `${store.counterFor(trophy)} / ${trophy.count_target} ${trophy.count_label}`));
     }
@@ -64,7 +95,7 @@ export function renderChecklist(trophies, visible, view, store, onSelect) {
   }
 }
 
-export function renderDetail(trophy, store) {
+export function renderDetail(doc, trophy, store) {
   const panel = document.getElementById('detail-panel');
   panel.replaceChildren();
   if (!trophy) {
@@ -77,9 +108,25 @@ export function renderDetail(trophy, store) {
   panel.append(element('p', 'kicker', `Trophy ${trophy.id} of 55 · ${trophy.grade}${trophy.hidden ? ' · hidden on PlayStation' : ''} · Stage ${trophy.stage}`));
   panel.append(element('h2', '', trophy.name));
   panel.append(element('p', 'official', `Official description: “${trophy.description}”`));
-  if (trophy.missable) panel.append(element('p', 'flag', '⚠ Possibly missable — the only one the published guides flag. See its guide for the Chapter 1 step.'));
-  if (trophy.story_window) panel.append(element('p', 'flag', 'Story window — finish this strand before the endgame.'));
+  if (trophy.missable) panel.append(element('p', 'flag', '⚠ Possibly missable — the only one the published guides flag. See step 1 and the disagreement box.'));
+  if (trophy.story_window) panel.append(element('p', 'flag', 'WATCH — sources disagree on whether this strand has a closing window; both versions are in the disagreement box.'));
+  if (trophy.unconfirmed) panel.append(element('p', 'flag flag-quiet', 'UNCONFIRMED — no source we read pins this trigger down; the steps say so rather than inventing one.'));
   panel.append(element('p', 'guide-text', trophy.guide));
+  if (trophy.disagreement) {
+    const box = element('div', 'disagree-box');
+    box.append(element('p', 'disagree-title', 'Sources disagree — both versions shown'));
+    box.append(element('p', '', trophy.disagreement));
+    panel.append(box);
+  }
+  const steps = element('ol', 'steps');
+  for (const step of trophy.steps ?? []) {
+    const item = element('li');
+    item.append(document.createTextNode(step.t));
+    const refs = element('span', 'step-refs', ` [${(step.refs ?? []).join('] [')}]`);
+    item.append(refs);
+    steps.append(item);
+  }
+  panel.append(steps);
   if (hasCounter(trophy)) {
     const box = element('div', 'counter-box');
     const minus = element('button', '', '−');
@@ -101,10 +148,15 @@ export function renderDetail(trophy, store) {
   done.type = 'button';
   done.addEventListener('click', () => store.toggleEarned(trophy.id));
   panel.append(done);
+  const coverage = sourceCoverage(doc);
   const sources = element('div', 'sources');
   sources.append(element('p', '', 'Sources for this guide'));
   const sourceList = element('ul');
-  for (const source of trophy.sources ?? []) sourceList.append(element('li', '', source));
+  for (const ref of citedRefsFor(trophy)) {
+    const source = sourceByNumber(doc, ref);
+    if (!source) continue;
+    sourceList.append(element('li', '', `[${ref}] ${source.name} — cited by ${coverage.get(ref) ?? 0} of 55 guides`));
+  }
   sources.append(sourceList);
   panel.append(sources);
 }
@@ -153,4 +205,23 @@ export function renderNextUp(nextUp) {
     );
     list.append(item);
   }
+}
+
+export function renderSources(doc) {
+  const coverage = sourceCoverage(doc);
+  const list = document.getElementById('sources-list');
+  list.replaceChildren();
+  for (const source of doc.sources ?? []) {
+    const item = element('li', 'source-entry');
+    item.append(
+      element('strong', '', `[${source.n}] ${source.name}`),
+      document.createTextNode(` — ${source.detail} Cited by ${coverage.get(source.n) ?? 0} of 55 guides.`),
+    );
+    list.append(item);
+  }
+  const audit = auditStats(doc);
+  document.getElementById('audit-explainer').textContent =
+    `Audit, counted from the data on this page: ${audit.guidesCited} of ${audit.total} guides cite at least one source; ` +
+    `${audit.citedSteps} of ${audit.steps} steps carry a citation; ${audit.disagree} trophies show a disagreement box; ` +
+    `${audit.unconfirmed} are marked unconfirmed because no source read pins their trigger down.`;
 }

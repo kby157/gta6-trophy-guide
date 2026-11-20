@@ -33,10 +33,17 @@ function checkTrophyDataComplete() {
   if (!Array.isArray(trophies) || trophies.length !== 55) {
     throw new Error(`trophy data must hold exactly 55 trophies, found ${trophies?.length}`);
   }
+  const knownSources = new Set((doc.sources ?? []).map((source) => source.n));
+  if (knownSources.size === 0) throw new Error('the source registry is empty');
   for (const trophy of trophies) {
     if (typeof trophy.name !== 'string' || trophy.name.trim() === '') throw new Error('a trophy has no name');
-    if (typeof trophy.guide !== 'string' || trophy.guide.trim().length < 80) throw new Error(`guide too short for ${trophy.name}`);
-    if (!Array.isArray(trophy.sources) || trophy.sources.length === 0) throw new Error(`no sources cited for ${trophy.name}`);
+    if (typeof trophy.guide !== 'string' || trophy.guide.trim().length < 40) throw new Error(`guide summary too short for ${trophy.name}`);
+    if (!Array.isArray(trophy.steps) || trophy.steps.length < 2) throw new Error(`guide steps missing for ${trophy.name}`);
+    for (const step of trophy.steps) {
+      if (typeof step.t !== 'string' || step.t.trim() === '') throw new Error(`a blank step in ${trophy.name}`);
+      if (!Array.isArray(step.refs) || step.refs.length === 0) throw new Error(`an uncited step in ${trophy.name}`);
+      for (const ref of step.refs) if (!knownSources.has(ref)) throw new Error(`step in ${trophy.name} cites unknown source ${ref}`);
+    }
   }
   return trophies.length;
 }

@@ -22,21 +22,24 @@
   </section>
 </header>
 
+<p id="audit-bar" aria-label="Guide audit"></p>
+
 <nav id="view-tabs" aria-label="Views">
   <button type="button" data-view="checklist" class="tab active">Checklist &amp; guides</button>
   <button type="button" data-view="roadmap" class="tab">Roadmap &amp; missables</button>
   <button type="button" data-view="nextup" class="tab">Next up planner</button>
+  <button type="button" data-view="sources" class="tab">Sources &amp; audit</button>
 </nav>
 
 <section id="controls" aria-label="Tracker controls">
   <label class="control grow">Search <input id="search" type="search" placeholder="Name, mission, character, place…"></label>
-  <div class="control" id="kind-filters" role="group" aria-label="Filter by kind">
-    <button type="button" data-kind="all" class="chip active">All 55</button>
-    <button type="button" data-kind="story" class="chip">Story</button>
-    <button type="button" data-kind="missable" class="chip">Missable &amp; windows</button>
-    <button type="button" data-kind="collectibles" class="chip">Collectibles</button>
-    <button type="button" data-kind="activities" class="chip">Activities</button>
-    <button type="button" data-kind="online" class="chip">Online (none)</button>
+  <div class="control" id="kind-filters" role="group" aria-label="Filter by kind"></div>
+  <div class="control" id="status-filters" role="group" aria-label="Filter by status">
+    <button type="button" data-status="any" class="chip active">Any status</button>
+    <button type="button" data-status="watch" class="chip">Missable &amp; watch</button>
+    <button type="button" data-status="unconfirmed" class="chip">Unconfirmed</button>
+    <button type="button" data-status="disagree" class="chip">Sources disagree</button>
+    <button type="button" data-status="online" class="chip">Online (none)</button>
   </div>
   <label class="control">Grade
     <select id="grade-filter">
@@ -57,9 +60,10 @@
 
 <main id="checklist-view">
   <section id="list-panel" aria-label="Trophy checklist">
+    <div id="stage-strip" aria-label="Roadmap progress by stage"></div>
     <p id="list-summary"></p>
     <ul id="trophy-list"></ul>
-    <p id="online-note" hidden>There are no online trophies in GTA VI: all 55 are offline and single-player (sources: Exophase list; GTABase Trophy Guide). This filter is here so that fact is checkable, not assumed.</p>
+    <p id="online-note" hidden>There are no online trophies in GTA VI: all 55 are offline and single-player (sources: [5] Exophase list; [2] GTABase Trophy Guide). This filter is here so that fact is checkable, not assumed.</p>
   </section>
   <article id="detail-panel" aria-label="Trophy guide">
     <p class="detail-empty">Select a trophy to read its guide and its sources.</p>
@@ -70,8 +74,8 @@
   <h2>Roadmap to the platinum</h2>
   <p class="roadmap-intro">One playthrough, no difficulty setting and no mission replay, so save manually at the start of each chapter and keep cheats off (they disable trophies and saving). Published roadmaps put the platinum at roughly 200 hours and call A Long Road, the 100% trophy, the hardest on the list. Sources: GTABase Trophy Guide; PowerPyx roadmap; Push Square Trophy Guide &amp; Roadmap.</p>
   <div id="roadmap-stages"></div>
-  <h2>Missable &amp; story-window trophies</h2>
-  <p class="roadmap-intro">Only one trophy is reported as possibly missable by the published guides: Positive Mental Attitude. Five stranger finales carry a story window instead — their chains are tied to story progress, so finish them before the endgame.</p>
+  <h2>Missable &amp; watch trophies</h2>
+  <p class="roadmap-intro">Only one trophy is reported as possibly missable by the published guides: Positive Mental Attitude. Five stranger finales carry a WATCH flag instead: one source reports their chains have windows tied to story progress, another says the quest givers return after the story. Both versions are shown on each of those trophies; the safe play is to start the chains when they are offered.</p>
   <ul id="missable-list"></ul>
 </section>
 
@@ -79,6 +83,13 @@
   <h2>Next up</h2>
   <p class="roadmap-intro">Your next five trophies, in roadmap order: the possibly missable one and any open story window first, then the earliest stage you have not finished.</p>
   <ol id="nextup-list"></ol>
+</section>
+
+<section id="sources-view" hidden>
+  <h2>Sources &amp; audit</h2>
+  <p class="roadmap-intro">Every guide in this app is written in numbered steps, and every step ends with the numbered sources it rests on. The registry below is the whole source set; the count beside each one is how many of the 55 guides cite it, counted from the data itself. Where sources disagree, the trophy shows both versions in a disagreement box instead of picking a winner quietly.</p>
+  <ol id="sources-list"></ol>
+  <p class="roadmap-intro" id="audit-explainer"></p>
 </section>
 
 <footer>

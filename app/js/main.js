@@ -1,16 +1,19 @@
-// Boot and wiring: loads the data, holds the current view state, and
-// re-renders every view whenever progress or a control changes.
+// Boot and wiring: loads the data, builds the kind filter chips from the
+// data's own categories (so their counts are always true), holds the
+// current view state, and re-renders every view whenever progress or a
+// control changes.
 
-import { loadTrophyData } from './data.js';
+import { KIND_LABELS, KIND_ORDER, loadTrophyData } from './data.js';
 import { createStore, exportProgressToFile, importProgressFromFile, seedDemoStateIfAsked } from './store.js';
 import { filterTrophies, nextUpTrophies } from './filters.js';
-import { renderChecklist, renderDetail, renderNextUp, renderProgress, renderRoadmap } from './views.js';
+import { renderAudit, renderChecklist, renderDetail, renderNextUp, renderProgress, renderRoadmap, renderSources, renderStageStrip } from './views.js';
 
 const store = createStore();
 seedDemoStateIfAsked(store);
 
 const view = {
   kind: 'all',
+  status: 'any',
   grade: 'all',
   search: '',
   spoilersOn: true,
@@ -19,27 +22,58 @@ const view = {
   panel: 'checklist',
 };
 
-let trophies = [];
+let doc = null;
+
+function trophies() {
+  return doc?.trophies ?? [];
+}
 
 function currentTrophy() {
-  return trophies.find((trophy) => trophy.id === view.selectedId) ?? null;
+  return trophies().find((trophy) => trophy.id === view.selectedId) ?? null;
+}
+
+function buildKindChips() {
+  const wrap = document.getElementById('kind-filters');
+  wrap.replaceChildren();
+  const makeChip = (kind, label) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip';
+    chip.dataset.kind = kind;
+    chip.textContent = label;
+    if (view.kind === kind) chip.classList.add('active');
+    chip.addEventListener('click', () => {
+      view.kind = kind;
+      for (const other of wrap.querySelectorAll('.chip')) other.classList.toggle('active', other === chip);
+      renderAll();
+    });
+    wrap.append(chip);
+  };
+  makeChip('all', `All ${trophies().length}`);
+  for (const kind of KIND_ORDER) {
+    const count = trophies().filter((trophy) => trophy.kind === kind).length;
+    if (count > 0) makeChip(kind, `${KIND_LABELS[kind]} ${count}`);
+  }
 }
 
 function renderAll() {
-  const visible = filterTrophies(trophies, view, store);
-  const nextUp = nextUpTrophies(trophies, store);
-  renderProgress(trophies, store, nextUp);
-  renderChecklist(trophies, visible, view, store, (id) => {
+  const all = trophies();
+  const visible = filterTrophies(all, view, store);
+  const nextUp = nextUpTrophies(all, store);
+  renderProgress(all, store, nextUp);
+  renderStageStrip(all, store);
+  renderChecklist(all, visible, view, store, (id) => {
     view.selectedId = id;
     renderAll();
   });
-  renderDetail(currentTrophy(), store);
-  renderRoadmap(trophies, store);
+  renderDetail(doc, currentTrophy(), store);
+  renderRoadmap(all, store);
   renderNextUp(nextUp);
   document.getElementById('checklist-view').hidden = view.panel !== 'checklist';
   document.getElementById('controls').hidden = view.panel !== 'checklist';
   document.getElementById('roadmap-view').hidden = view.panel !== 'roadmap';
   document.getElementById('nextup-view').hidden = view.panel !== 'nextup';
+  document.getElementById('sources-view').hidden = view.panel !== 'sources';
   for (const tab of document.querySelectorAll('#view-tabs .tab')) {
     tab.classList.toggle('active', tab.dataset.view === view.panel);
   }
@@ -62,10 +96,10 @@ function wireControls() {
     view.hideEarned = event.target.checked;
     renderAll();
   });
-  for (const chip of document.querySelectorAll('#kind-filters .chip')) {
+  for (const chip of document.querySelectorAll('#status-filters .chip')) {
     chip.addEventListener('click', () => {
-      view.kind = chip.dataset.kind;
-      for (const other of document.querySelectorAll('#kind-filters .chip')) {
+      view.status = chip.dataset.status;
+      for (const other of document.querySelectorAll('#status-filters .chip')) {
         other.classList.toggle('active', other === chip);
       }
       renderAll();
@@ -85,6 +119,9 @@ function wireControls() {
 }
 
 store.subscribe(renderAll);
-trophies = await loadTrophyData();
+doc = await loadTrophyData();
+renderAudit(doc);
+renderSources(doc);
+buildKindChips();
 wireControls();
 renderAll();

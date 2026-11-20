@@ -86,7 +86,7 @@ export function seedDemoStateIfAsked(store) {
   if (params.get('demo') !== '1') return;
   if (store.getState().earned.length > 0) return;
   store.replaceState({
-    earned: [2, 3, 8, 15, 16, 20, 21, 28, 33, 35, 39, 44, 55],
-    counters: { 15: 87, 17: 19, 25: 3, 28: 6, 31: 41, 35: 100, 42: 23, 48: 132 },
+    earned: [2, 3, 8, 16, 20, 21, 28, 30, 33, 35, 39, 44, 55],
+    counters: { 15: 87, 16: 9, 17: 19, 25: 3, 28: 6, 30: 3, 31: 41, 35: 100, 42: 23, 48: 132 },
   });
 }

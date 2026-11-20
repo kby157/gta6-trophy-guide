@@ -5,26 +5,31 @@
 export const ROADMAP_STAGES = [
   {
     stage: 1,
+    short: 'Story & strands',
     title: 'Stage 1 — Story, strands as they appear, and the one missable',
-    text: 'Play the five chapters and the named missions. Take stranger strands when they are offered (their chains have story windows), start meditation in Chapter 1, and scan vehicles and WAiNK locations as you travel. Save manually at each chapter: there is no mission replay.',
+    text: 'Play the five chapters and the named missions. Take stranger strands when they are offered (one source reports story windows on their chains; another says the quest givers return — both versions are shown on those trophies), start meditation in Chapter 1, and scan vehicles and WAiNK locations as you travel. Save manually at each chapter: there is no mission replay.',
   },
   {
     stage: 2,
+    short: 'The 100% spine',
     title: 'Stage 2 — The 100% spine',
     text: 'After the credits the game opens its own 100% checklist in Progress. Work it as the spine: stunts, ranges, races, cards, challenges, vaults and gang operations all feed A Long Road, the hardest trophy on the list.',
   },
   {
     stage: 3,
+    short: 'Feats & one-offs',
     title: 'Stage 3 — Feats, partners and hidden one-offs',
     text: 'The specific feats and the vague hidden trophies: partner wanted-level runs, the Combat Focus five, the showroom smash, the Ocean Beach cocktail, and the hidden trophies whose sources do not pin a trigger down (this app says so on each of those, rather than inventing one).',
   },
   {
     stage: 4,
+    short: 'Money & property',
     title: 'Stage 4 — Money and property',
     text: 'Launder the marked bills, spend across the shops, buy every garage and register your vehicles. These totals accumulate quietly if you start them during the story instead of farming them at the end.',
   },
   {
     stage: 5,
+    short: 'Platinum clean-up',
     title: 'Stage 5 — Platinum clean-up',
     text: 'Whatever the Next Up planner still shows, then Vice Got a Price! unlocks on its own when the other 54 are earned. Published roadmaps budget roughly 200 hours for the whole run.',
   },
@@ -40,5 +45,5 @@ export function missableAndWindowTrophies(trophies) {
 
 export function missableLabel(trophy) {
   if (trophy.missable) return 'Possibly missable — do it in Chapter 1 and as spots open';
-  return 'Story window — finish this strand before the endgame';
+  return 'Watch — sources disagree on whether this strand has a closing window; start it when offered';
 }
