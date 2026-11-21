@@ -1,4 +1,4 @@
-// The platinum roadmap and the missable / story-window lists.
+// Roadmap stages and the missable / watch lists.
 
 export const ROADMAP_STAGES = [
   {

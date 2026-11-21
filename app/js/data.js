@@ -1,4 +1,4 @@
-// Trophy data loading and derivations: registry, coverage, audit numbers — all computed from the data file, so printed numbers cannot drift.
+// Trophy data: registry, coverage and audit numbers computed from the data file.
 
 export const KIND_ORDER = ['platinum', 'story', 'side', 'collectibles', 'activities', 'crime', 'money', 'completion', 'misc'];
 export const KIND_LABELS = {
@@ -24,7 +24,7 @@ export function isStoryTrophy(trophy) {
 }
 
 export function isHiddenStoryTrophy(trophy) {
-  // Spoiler protection covers every hidden trophy: its name is itself the spoiler.
+  // Spoiler protection: a hidden trophy's name is itself the spoiler.
   return trophy.hidden === true;
 }
 
@@ -49,7 +49,7 @@ export function sourceByNumber(doc, n) {
   return (doc.sources ?? []).find((source) => source.n === n) ?? null;
 }
 
-// Guides citing each numbered source, per source number.
+// Guides citing each source number.
 export function sourceCoverage(doc) {
   const coverage = new Map();
   for (const trophy of doc.trophies) {
@@ -58,7 +58,7 @@ export function sourceCoverage(doc) {
   return coverage;
 }
 
-// Per guide: facts and steps each cited source backs (the rail).
+// Per guide: facts and steps each source backs (the rail).
 export function guideBackingFor(doc, trophy) {
   const perSource = new Map();
   const bump = (ref, key) => {
@@ -79,7 +79,7 @@ export function guideBackingFor(doc, trophy) {
   };
 }
 
-// Audit numbers, counted at load. Claims are the atomic facts; backed = facts with >= 2 distinct refs.
+// Audit numbers at load: claims = facts; backed = facts with >= 2 distinct refs.
 export function auditStats(doc) {
   const trophies = doc.trophies;
   let steps = 0;

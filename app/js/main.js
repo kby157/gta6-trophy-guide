@@ -1,4 +1,4 @@
-// Boot and wiring: loads data, builds filter chips, holds view state, re-renders on change.
+// Boot: load data, build chips, hold view state, re-render on change.
 
 import { KIND_LABELS, KIND_ORDER, loadTrophyData } from './data.js';
 import { createStore, exportProgressToFile, importProgressFromFile, seedDemoStateIfAsked } from './store.js';

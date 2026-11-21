@@ -1,4 +1,4 @@
-// Rendering: audit tiles, checklist, guide pane, sources rail, roadmap, Next Up, stage strip.
+// Rendering: tiles, checklist, guide pane, rail, roadmap, Next Up, stages.
 
 import { auditStats, citedRefsFor, guideBackingFor, hasCounter, sourceByNumber, sourceCoverage } from './data.js';
 import { shouldMaskForSpoilers } from './filters.js';
@@ -113,7 +113,7 @@ export function renderDetail(doc, trophy, store) {
     return;
   }
   const isEarned = store.isEarned(trophy.id);
-  // Opening a masked trophy is the reader's choice; show it whole.
+  // Opening a masked trophy is the reader's choice.
   panel.append(element('p', 'kicker', `Trophy ${trophy.id} of 55 · ${trophy.grade}${trophy.hidden ? ' · hidden on PlayStation' : ''} · Stage ${trophy.stage}`));
   panel.append(element('h2', '', trophy.name));
   panel.append(element('p', 'official', `Official description: “${trophy.description}”`));
@@ -172,7 +172,7 @@ export function renderDetail(doc, trophy, store) {
   panel.append(done);
 }
 
-// The rail: sources the selected guide cites, with facts/steps backed per source.
+// Rail: sources the guide cites, facts/steps backed per source.
 export function renderRail(doc, trophy) {
   const rail = document.getElementById('sources-rail');
   rail.replaceChildren();
