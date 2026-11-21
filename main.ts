@@ -29,7 +29,11 @@ const out = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
 // The fact-level half mirrors the app's own audit definitions in
 // app/js/data.js (claims = atomic facts; backed = facts whose refs hold at
 // least two distinct registry numbers), so the numbers this check logs are
-// the numbers the app prints on its cover tiles.
+// the numbers the app prints on its cover tiles. Citations are read the
+// app's way as well — structured refs plus the [n] markers in guide and
+// disagreement prose — and the registry must earn its page count: every
+// cited number has to resolve, and every registered page has to be cited
+// by at least one trophy, or the hand-in fails here.
 function checkTrophyDataComplete() {
   const raw = readFileSync(join(here, 'app', 'data', 'trophies.json'), 'utf8');
   const doc = JSON.parse(raw);
@@ -42,6 +46,7 @@ function checkTrophyDataComplete() {
   let claims = 0;
   let backed = 0;
   let steps = 0;
+  const citedAnywhere = new Set();
   for (const trophy of trophies) {
     if (typeof trophy.name !== 'string' || trophy.name.trim() === '') throw new Error('a trophy has no name');
     if (typeof trophy.guide !== 'string' || trophy.guide.trim().length < 40) throw new Error(`guide summary too short for ${trophy.name}`);
@@ -50,19 +55,35 @@ function checkTrophyDataComplete() {
       steps += 1;
       if (typeof step.t !== 'string' || step.t.trim() === '') throw new Error(`a blank step in ${trophy.name}`);
       if (!Array.isArray(step.refs) || step.refs.length === 0) throw new Error(`an uncited step in ${trophy.name}`);
-      for (const ref of step.refs) if (!knownSources.has(ref)) throw new Error(`step in ${trophy.name} cites unknown source ${ref}`);
+      for (const ref of step.refs) {
+        if (!knownSources.has(ref)) throw new Error(`step in ${trophy.name} cites unknown source ${ref}`);
+        citedAnywhere.add(ref);
+      }
     }
     if (!Array.isArray(trophy.facts) || trophy.facts.length < 8) throw new Error(`fewer than 8 facts for ${trophy.name}`);
     for (const fact of trophy.facts) {
       claims += 1;
       if (typeof fact.t !== 'string' || fact.t.trim() === '') throw new Error(`a blank fact in ${trophy.name}`);
       if (!Array.isArray(fact.refs) || fact.refs.length === 0) throw new Error(`an uncited fact in ${trophy.name}`);
-      for (const ref of fact.refs) if (!knownSources.has(ref)) throw new Error(`fact in ${trophy.name} cites unknown source ${ref}`);
+      for (const ref of fact.refs) {
+        if (!knownSources.has(ref)) throw new Error(`fact in ${trophy.name} cites unknown source ${ref}`);
+        citedAnywhere.add(ref);
+      }
       if (new Set(fact.refs).size >= 2) backed += 1;
     }
+    for (const prose of [trophy.guide, trophy.disagreement]) {
+      for (const marker of (prose ?? '').matchAll(/\[(\d+)\]/g)) {
+        const ref = Number(marker[1]);
+        if (!knownSources.has(ref)) throw new Error(`prose in ${trophy.name} cites unknown source ${ref}`);
+        citedAnywhere.add(ref);
+      }
+    }
+  }
+  for (const n of knownSources) {
+    if (!citedAnywhere.has(n)) throw new Error(`registered source ${n} is cited by no trophy`);
   }
   const sites = new Set(
-    (doc.sources ?? []).filter((source) => source.site !== 'official-list').map((source) => source.site),
+    (doc.sources ?? []).filter((source) => citedAnywhere.has(source.n) && source.site !== 'official-list').map((source) => source.site),
   );
   return {
     trophies: trophies.length,
@@ -70,7 +91,7 @@ function checkTrophyDataComplete() {
     backed,
     steps,
     disputes: trophies.filter((trophy) => trophy.disagreement).length,
-    sourcePages: (doc.sources ?? []).length,
+    sourcePages: citedAnywhere.size,
     siteCount: sites.size,
   };
 }

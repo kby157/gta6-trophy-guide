@@ -42,6 +42,11 @@ export function citedRefsFor(trophy) {
   const refs = new Set();
   for (const step of trophy.steps ?? []) for (const ref of step.refs ?? []) refs.add(ref);
   for (const fact of trophy.facts ?? []) for (const ref of fact.refs ?? []) refs.add(ref);
+  // Prose counts too: [n] markers in the guide and disagreement text cite a
+  // source just as a structured ref does.
+  for (const prose of [trophy.guide, trophy.disagreement]) {
+    for (const marker of (prose ?? '').matchAll(/\[(\d+)\]/g)) refs.add(Number(marker[1]));
+  }
   return [...refs].sort((a, b) => a - b);
 }
 
@@ -96,8 +101,13 @@ export function auditStats(doc) {
       if (new Set(fact.refs ?? []).size >= 2) backed += 1;
     }
   }
+  // Page and site totals count cited sources only (citedRefsFor, prose
+  // included): an uncited registry page never inflates the tiles.
+  const citedNumbers = new Set();
+  for (const trophy of trophies) for (const ref of citedRefsFor(trophy)) citedNumbers.add(ref);
+  const citedSources = (doc.sources ?? []).filter((source) => citedNumbers.has(source.n));
   const sites = new Set(
-    (doc.sources ?? []).filter((source) => source.site !== 'official-list').map((source) => source.site),
+    citedSources.filter((source) => source.site !== 'official-list').map((source) => source.site),
   );
   return {
     total: trophies.length,
@@ -108,8 +118,8 @@ export function auditStats(doc) {
     citedSteps,
     claims,
     backed,
-    sourceCount: (doc.sources ?? []).length,
-    sourcePages: (doc.sources ?? []).length,
+    sourceCount: citedSources.length,
+    sourcePages: citedSources.length,
     siteCount: sites.size,
     readDate: doc.read_date ?? '',
     missable: trophies.filter((trophy) => trophy.missable).length,
