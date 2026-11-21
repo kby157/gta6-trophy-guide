@@ -1,5 +1,4 @@
-// Progress storage: earned trophies and per-trophy counters, kept in
-// localStorage, with export to a file and import back from that file.
+// Progress storage: earned trophies and counters in localStorage, with export/import.
 
 const STORAGE_KEY = 'leonida-platinum-tracker-v1';
 
@@ -78,8 +77,7 @@ export async function importProgressFromFile(store, file) {
   store.replaceState(state);
 }
 
-// Demo seeding for screenshots: ?demo=1 marks a believable mid-run
-// state (13 earned, counters part way) on an empty store only.
+// Demo seeding: ?demo=1 marks a mid-run state (13 earned), empty store only.
 export function seedDemoStateIfAsked(store) {
   const params = new URLSearchParams(location.search);
   if (params.get('demo') !== '1') return;

@@ -1,6 +1,4 @@
-// Loading the trophy data and what the views derive from it: the source
-// registry, per-source coverage and the audit numbers. Everything is
-// computed from the data file itself, so printed numbers cannot drift.
+// Trophy data loading and derivations: registry, coverage, audit numbers — all computed from the data file, so printed numbers cannot drift.
 
 export const KIND_ORDER = ['platinum', 'story', 'side', 'collectibles', 'activities', 'crime', 'money', 'completion', 'misc'];
 export const KIND_LABELS = {
@@ -26,8 +24,7 @@ export function isStoryTrophy(trophy) {
 }
 
 export function isHiddenStoryTrophy(trophy) {
-  // Spoiler protection covers every trophy PlayStation hides, not only the
-  // chapter ones: a hidden trophy's name is itself the spoiler.
+  // Spoiler protection covers every hidden trophy: its name is itself the spoiler.
   return trophy.hidden === true;
 }
 
@@ -52,7 +49,7 @@ export function sourceByNumber(doc, n) {
   return (doc.sources ?? []).find((source) => source.n === n) ?? null;
 }
 
-// How many of the 55 guides cite each numbered source, per source number.
+// Guides citing each numbered source, per source number.
 export function sourceCoverage(doc) {
   const coverage = new Map();
   for (const trophy of doc.trophies) {
@@ -61,8 +58,7 @@ export function sourceCoverage(doc) {
   return coverage;
 }
 
-// For one guide: how many of its facts and steps each cited source backs
-// (what the sources rail renders).
+// Per guide: facts and steps each cited source backs (the rail).
 export function guideBackingFor(doc, trophy) {
   const perSource = new Map();
   const bump = (ref, key) => {
@@ -83,8 +79,7 @@ export function guideBackingFor(doc, trophy) {
   };
 }
 
-// The audit tiles' numbers, counted from the data at load time. Claims
-// are the atomic facts; backed = facts with >= 2 distinct refs.
+// Audit numbers, counted at load. Claims are the atomic facts; backed = facts with >= 2 distinct refs.
 export function auditStats(doc) {
   const trophies = doc.trophies;
   let steps = 0;

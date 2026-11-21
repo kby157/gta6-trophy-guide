@@ -1,5 +1,4 @@
-// Filtering and the spoiler rule: two axes (kind, status); spoiler
-// protection hides a hidden trophy's name and description until earned.
+// Two filter axes (kind, status); spoiler protection hides a hidden trophy's name and description until earned.
 
 import { isHiddenStoryTrophy, searchTextFor } from './data.js';
 

@@ -1,5 +1,4 @@
-// Rendering: audit tiles, checklist rows, the guide pane (facts, steps,
-// disagreement box), the sources rail, roadmap, Next Up and stage strip.
+// Rendering: audit tiles, checklist, guide pane, sources rail, roadmap, Next Up, stage strip.
 
 import { auditStats, citedRefsFor, guideBackingFor, hasCounter, sourceByNumber, sourceCoverage } from './data.js';
 import { shouldMaskForSpoilers } from './filters.js';
@@ -64,7 +63,7 @@ export function renderChecklist(trophies, visible, view, store, onSelect) {
   const list = document.getElementById('trophy-list');
   list.replaceChildren();
   document.getElementById('list-summary').textContent =
-    `Showing ${visible.length} of ${trophies.length} trophies. Click a row for its guide and sources; tick the box to mark earned.`;
+    `Showing ${visible.length} of ${trophies.length} trophies. Click a row for its guide; tick the box to mark earned.`;
   document.getElementById('online-note').hidden = view.status !== 'online';
   for (const trophy of visible) {
     const isEarned = store.isEarned(trophy.id);
@@ -80,7 +79,7 @@ export function renderChecklist(trophies, visible, view, store, onSelect) {
     box.addEventListener('change', () => store.toggleEarned(trophy.id));
     const main = element('span', 'row-main');
     const name = element('span', 'row-name', masked ? 'Hidden story trophy — earn it to reveal' : trophy.name);
-    const desc = element('span', 'row-desc', masked ? 'Name and description hidden by spoiler protection.' : trophy.description);
+    const desc = element('span', 'row-desc', masked ? 'Hidden by spoiler protection.' : trophy.description);
     desc.style.display = 'block';
     const meta = element('span', 'row-meta');
     const grade = element('span');
@@ -110,17 +109,17 @@ export function renderDetail(doc, trophy, store) {
   const panel = document.getElementById('detail-panel');
   panel.replaceChildren();
   if (!trophy) {
-    panel.append(element('p', 'detail-empty', 'Select a trophy to read its guide and its sources.'));
+    panel.append(element('p', 'detail-empty', 'Select a trophy to read its guide and sources.'));
     return;
   }
   const isEarned = store.isEarned(trophy.id);
-  // Opening a masked trophy here is the reader's own choice; show it whole.
+  // Opening a masked trophy is the reader's choice; show it whole.
   panel.append(element('p', 'kicker', `Trophy ${trophy.id} of 55 · ${trophy.grade}${trophy.hidden ? ' · hidden on PlayStation' : ''} · Stage ${trophy.stage}`));
   panel.append(element('h2', '', trophy.name));
   panel.append(element('p', 'official', `Official description: “${trophy.description}”`));
-  if (trophy.missable) panel.append(element('p', 'flag', '⚠ Possibly missable — the only one the published guides flag. See step 1 and the disagreement box.'));
-  if (trophy.story_window) panel.append(element('p', 'flag', 'WATCH — sources disagree on whether this strand has a closing window; both versions are in the disagreement box.'));
-  if (trophy.unconfirmed) panel.append(element('p', 'flag flag-quiet', 'UNCONFIRMED — no source we read pins this trigger down; the steps say so rather than inventing one.'));
+  if (trophy.missable) panel.append(element('p', 'flag', '⚠ Possibly missable — the only one the published guides flag. See step 1 and the box below.'));
+  if (trophy.story_window) panel.append(element('p', 'flag', 'WATCH — sources disagree on whether this strand has a closing window; both versions below.'));
+  if (trophy.unconfirmed) panel.append(element('p', 'flag flag-quiet', 'UNCONFIRMED — no source read pins this trigger down; the steps say so.'));
   panel.append(element('p', 'guide-text', trophy.guide));
   if (trophy.disagreement) {
     const box = element('div', 'disagree-box');
@@ -173,8 +172,7 @@ export function renderDetail(doc, trophy, store) {
   panel.append(done);
 }
 
-// The right-hand rail: the sources the selected guide cites, each with how
-// many of that guide's facts and steps it backs.
+// The rail: sources the selected guide cites, with facts/steps backed per source.
 export function renderRail(doc, trophy) {
   const rail = document.getElementById('sources-rail');
   rail.replaceChildren();
@@ -255,8 +253,8 @@ export function renderSources(doc) {
   }
   const audit = auditStats(doc);
   document.getElementById('audit-explainer').textContent =
-    `Audit, counted from the data on this page: ${audit.claims} atomic claims across the 55 guides, ` +
-    `${audit.backed} of them backed by two or more distinct sources; ${audit.guidesCited} of ${audit.total} guides cite at least one source; ` +
-    `${audit.citedSteps} of ${audit.steps} steps carry a citation; ${audit.disagree} trophies show a disagreement box; ` +
-    `${audit.unconfirmed} are marked unconfirmed because no source read pins their trigger down.`;
+    `Audit, counted from the data: ${audit.claims} atomic claims in 55 guides, ` +
+    `${audit.backed} backed by 2+ distinct sources; ${audit.guidesCited} of ${audit.total} guides cite a source; ` +
+    `${audit.citedSteps} of ${audit.steps} steps carry a citation; ${audit.disagree} trophies show disagreements; ` +
+    `${audit.unconfirmed} marked unconfirmed — no source read pins their trigger down.`;
 }
