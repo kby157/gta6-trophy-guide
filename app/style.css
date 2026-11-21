@@ -136,6 +136,11 @@ h1 { margin: 0; font-family: Iowan Old Style, Palatino, Georgia, serif; font-siz
   background: var(--paper); font-size: 19px; cursor: pointer;
 }
 .counter-box input { width: 92px; padding: 6px; font-size: 16px; border: 1px solid var(--line); border-radius: 6px; }
+.detail-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.counter-head { margin: 0; font-size: 14.5px; gap: 7px; }
+.counter-head .counter-label { font-size: 11px; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.counter-head button { width: 28px; height: 28px; }
+.counter-head input { width: 58px; padding: 4px; }
 #roadmap-view, #nextup-view, #sources-view { padding: 8px 20px 28px; max-width: 1060px; }
 #roadmap-view h2, #nextup-view h2, #sources-view h2 { font-family: Iowan Old Style, Palatino, Georgia, serif; font-size: 28px; margin: 18px 0 6px; }
 .roadmap-intro { color: var(--muted); max-width: 78ch; }

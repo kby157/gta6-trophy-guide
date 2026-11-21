@@ -105,6 +105,24 @@ export function renderChecklist(trophies, visible, view, store, onSelect) {
   }
 }
 
+function buildCounter(trophy, store) {
+  const box = element('div', 'counter-box counter-head');
+  const minus = element('button', '', '−');
+  minus.type = 'button';
+  minus.addEventListener('click', () => store.setCounter(trophy.id, store.counterFor(trophy) - 1));
+  const input = element('input');
+  input.type = 'number';
+  input.min = '0';
+  input.value = String(store.counterFor(trophy));
+  input.setAttribute('aria-label', `Counter for ${trophy.name}`);
+  input.addEventListener('change', () => store.setCounter(trophy.id, input.value));
+  const plus = element('button', '', '+');
+  plus.type = 'button';
+  plus.addEventListener('click', () => store.setCounter(trophy.id, store.counterFor(trophy) + 1));
+  box.append(element('span', 'counter-label', 'Your count:'), minus, input, plus, element('span', '', `/ ${trophy.count_target} ${trophy.count_label}`));
+  return box;
+}
+
 export function renderDetail(doc, trophy, store) {
   const panel = document.getElementById('detail-panel');
   panel.replaceChildren();
@@ -115,7 +133,10 @@ export function renderDetail(doc, trophy, store) {
   const isEarned = store.isEarned(trophy.id);
   // Opening a masked trophy is the reader's choice.
   panel.append(element('p', 'kicker', `Trophy ${trophy.id} of 55 · ${trophy.grade}${trophy.hidden ? ' · hidden on PlayStation' : ''} · Stage ${trophy.stage}`));
-  panel.append(element('h2', '', trophy.name));
+  const head = element('div', 'detail-head');
+  head.append(element('h2', '', trophy.name));
+  if (hasCounter(trophy)) head.append(buildCounter(trophy, store));
+  panel.append(head);
   panel.append(element('p', 'official', `Official description: “${trophy.description}”`));
   if (trophy.missable) panel.append(element('p', 'flag', '⚠ Possibly missable — the only one the published guides flag. See step 1 and the box below.'));
   if (trophy.story_window) panel.append(element('p', 'flag', 'WATCH — sources disagree on whether this strand has a closing window; both versions below.'));
@@ -159,23 +180,6 @@ export function renderDetail(doc, trophy, store) {
       factList.append(item);
     }
     panel.append(factList);
-  }
-  if (hasCounter(trophy)) {
-    const box = element('div', 'counter-box');
-    const minus = element('button', '', '−');
-    minus.type = 'button';
-    minus.addEventListener('click', () => store.setCounter(trophy.id, store.counterFor(trophy) - 1));
-    const input = element('input');
-    input.type = 'number';
-    input.min = '0';
-    input.value = String(store.counterFor(trophy));
-    input.setAttribute('aria-label', `Progress counter for ${trophy.name}`);
-    input.addEventListener('change', () => store.setCounter(trophy.id, input.value));
-    const plus = element('button', '', '+');
-    plus.type = 'button';
-    plus.addEventListener('click', () => store.setCounter(trophy.id, store.counterFor(trophy) + 1));
-    box.append(element('span', '', 'Your progress:'), minus, input, plus, element('span', '', `/ ${trophy.count_target} ${trophy.count_label}`));
-    panel.append(box);
   }
   const done = element('button', 'tab', isEarned ? 'Earned ✓ (click to undo)' : 'Mark as earned');
   done.type = 'button';
