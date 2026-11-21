@@ -183,10 +183,23 @@ export function renderDetail(doc, trophy, store) {
   panel.append(done);
 }
 
-// Rail: sources the guide cites, facts/steps backed per source.
-export function renderRail(doc, trophy) {
+// Rail: the Next Up five first, then sources the guide cites.
+export function renderRail(doc, trophy, nextUp = []) {
   const rail = document.getElementById('sources-rail');
   rail.replaceChildren();
+  if (nextUp.length) {
+    rail.append(element('h3', 'rail-title', 'Next up'));
+    const upList = element('ul', 'rail-list rail-nextup');
+    for (const up of nextUp) {
+      const item = element('li', 'rail-entry');
+      item.append(element('span', 'rail-name', up.name));
+      item.append(element('span', 'rail-counts', `Stage ${up.stage}`));
+      if (up.missable) item.append(element('span', 'flag', ' ⚠ MISSABLE'));
+      else if (up.story_window) item.append(element('span', 'flag flag-quiet', ' WATCH'));
+      upList.append(item);
+    }
+    rail.append(upList);
+  }
   rail.append(element('h3', 'rail-title', 'Sources behind this guide'));
   if (!trophy) {
     rail.append(element('p', 'rail-empty', 'Select a trophy to see the sources its guide rests on.'));
@@ -204,15 +217,49 @@ export function renderRail(doc, trophy) {
   rail.append(list);
 }
 
+// The run at a glance: every number is read off the platinum trophy's own
+// facts and dispute sides, with the refs those entries already carry; the
+// missable / watch counts are counted from the trophy flags themselves.
+function roadmapBandItems(trophies) {
+  const platinum = trophies.find((trophy) => trophy.kind === 'platinum');
+  const items = [];
+  const hours = (platinum?.disagreement?.sides ?? []).find((side) => /200 hours/.test(side.t));
+  if (hours) items.push({ label: '~200 hours', refs: hours.refs });
+  const facts = platinum?.facts ?? [];
+  const difficulty = facts.find((fact) => /difficulty 4 out of 10/.test(fact.t));
+  if (difficulty) items.push({ label: 'difficulty 4/10', refs: difficulty.refs });
+  const run = facts.find((fact) => /^One playthrough/.test(fact.t));
+  if (run) items.push({ label: '1 playthrough', refs: run.refs });
+  const missable = trophies.filter((trophy) => trophy.missable).length;
+  const watch = trophies.filter((trophy) => trophy.story_window).length;
+  if (missable) items.push({ label: `${missable} possibly missable`, refs: [] });
+  if (watch) items.push({ label: `${watch} on watch`, refs: [] });
+  return items;
+}
+
 export function renderRoadmap(trophies, store) {
   const wrap = document.getElementById('roadmap-stages');
   wrap.replaceChildren();
+  const band = element('p', 'roadmap-band', 'The run at a glance: ');
+  roadmapBandItems(trophies).forEach((item, index) => {
+    if (index) band.append(document.createTextNode(' · '));
+    band.append(document.createTextNode(item.label));
+    if (item.refs?.length) band.append(element('span', 'step-refs', ` [${item.refs.join('] [')}]`));
+  });
+  wrap.append(band);
   for (const stageInfo of ROADMAP_STAGES) {
     const section = element('section', 'stage');
     section.append(element('h3', '', stageInfo.title));
     section.append(element('p', '', stageInfo.text));
+    const inStage = trophiesForStage(trophies, stageInfo.stage);
+    const earnedInStage = inStage.filter((trophy) => store.isEarned(trophy.id)).length;
+    const progress = element('div', 'stage-progress');
+    const fill = element('span', 'stage-progress-fill');
+    fill.style.width = `${inStage.length ? Math.round((earnedInStage / inStage.length) * 100) : 0}%`;
+    progress.append(fill);
+    section.append(progress, element('p', 'stage-progress-label', `${earnedInStage}/${inStage.length} earned in this stage`));
     const chips = element('div', 'chips');
-    for (const trophy of trophiesForStage(trophies, stageInfo.stage)) {
+    for (const trophy of inStage) {
       const chip = element('span', 'tchip', trophy.name);
       if (store.isEarned(trophy.id)) chip.classList.add('done');
       chips.append(chip);
@@ -267,6 +314,41 @@ export function renderSources(doc) {
   const claimCounts = sourceClaimCounts(doc);
   const list = document.getElementById('sources-list');
   list.replaceChildren();
+  // Per-site rollup, counted from the same citations as the list below:
+  // pages = cited registry pages on the site; guides = trophies citing it.
+  const citedNumbers = new Set();
+  const guidesPerSite = new Map();
+  for (const trophy of doc.trophies ?? []) {
+    const sites = new Set();
+    for (const ref of citedRefsFor(trophy)) {
+      citedNumbers.add(ref);
+      const source = sourceByNumber(doc, ref);
+      if (source) sites.add(source.site);
+    }
+    for (const site of sites) guidesPerSite.set(site, (guidesPerSite.get(site) ?? 0) + 1);
+  }
+  const pagesPerSite = new Map();
+  for (const source of doc.sources ?? []) {
+    if (citedNumbers.has(source.n)) pagesPerSite.set(source.site, (pagesPerSite.get(source.site) ?? 0) + 1);
+  }
+  document.getElementById('site-rollup')?.remove();
+  const table = element('table', 'site-rollup');
+  table.id = 'site-rollup';
+  const head = element('tr');
+  for (const label of ['Site', 'Pages read', 'Guides citing']) head.append(element('th', '', label));
+  table.append(head);
+  const rows = [...pagesPerSite.entries()]
+    .sort((a, b) => b[1] - a[1] || (guidesPerSite.get(b[0]) ?? 0) - (guidesPerSite.get(a[0]) ?? 0));
+  for (const [site, pages] of rows) {
+    const row = element('tr');
+    row.append(
+      element('td', '', site),
+      element('td', '', String(pages)),
+      element('td', '', `${guidesPerSite.get(site) ?? 0} of 55`),
+    );
+    table.append(row);
+  }
+  list.before(table);
   for (const source of doc.sources ?? []) {
     const item = element('li', 'source-entry');
     const counts = claimCounts.get(source.n) ?? { claims: 0, backed: 0 };

@@ -64,7 +64,7 @@ function renderAll() {
     renderAll();
   });
   renderDetail(doc, currentTrophy(), store);
-  renderRail(doc, currentTrophy());
+  renderRail(doc, currentTrophy(), nextUp);
   renderRoadmap(all, store);
   renderNextUp(nextUp);
   document.getElementById('checklist-view').hidden = view.panel !== 'checklist';
