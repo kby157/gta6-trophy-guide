@@ -1,7 +1,6 @@
-// Loading the trophy data and the small facts every view derives from it:
-// the numbered source registry, per-source coverage, and the audit numbers
-// the header strip prints. Everything here is computed from the data file
-// itself, so the printed numbers can never drift from the guides.
+// Loading the trophy data and what the views derive from it: the source
+// registry, per-source coverage and the audit numbers. Everything is
+// computed from the data file itself, so printed numbers cannot drift.
 
 export const KIND_ORDER = ['platinum', 'story', 'side', 'collectibles', 'activities', 'crime', 'money', 'completion', 'misc'];
 export const KIND_LABELS = {
@@ -45,6 +44,7 @@ export function gradeCounts(trophies) {
 export function citedRefsFor(trophy) {
   const refs = new Set();
   for (const step of trophy.steps ?? []) for (const ref of step.refs ?? []) refs.add(ref);
+  for (const fact of trophy.facts ?? []) for (const ref of fact.refs ?? []) refs.add(ref);
   return [...refs].sort((a, b) => a - b);
 }
 
@@ -61,17 +61,49 @@ export function sourceCoverage(doc) {
   return coverage;
 }
 
-// The audit strip's numbers, all counted from the data at load time.
+// For one guide: how many of its facts and steps each cited source backs
+// (what the sources rail renders).
+export function guideBackingFor(doc, trophy) {
+  const perSource = new Map();
+  const bump = (ref, key) => {
+    const entry = perSource.get(ref) ?? { facts: 0, steps: 0 };
+    entry[key] += 1;
+    perSource.set(ref, entry);
+  };
+  for (const fact of trophy.facts ?? []) for (const ref of fact.refs ?? []) bump(ref, 'facts');
+  for (const step of trophy.steps ?? []) for (const ref of step.refs ?? []) bump(ref, 'steps');
+  const rows = [...perSource.entries()]
+    .map(([n, counts]) => ({ source: sourceByNumber(doc, n), n, facts: counts.facts, steps: counts.steps }))
+    .filter((row) => row.source)
+    .sort((a, b) => b.facts + b.steps - (a.facts + a.steps) || a.n - b.n);
+  return {
+    rows,
+    factTotal: (trophy.facts ?? []).length,
+    stepTotal: (trophy.steps ?? []).length,
+  };
+}
+
+// The audit tiles' numbers, counted from the data at load time. Claims
+// are the atomic facts; backed = facts with >= 2 distinct refs.
 export function auditStats(doc) {
   const trophies = doc.trophies;
   let steps = 0;
   let citedSteps = 0;
+  let claims = 0;
+  let backed = 0;
   for (const trophy of trophies) {
     for (const step of trophy.steps ?? []) {
       steps += 1;
       if ((step.refs ?? []).length > 0) citedSteps += 1;
     }
+    for (const fact of trophy.facts ?? []) {
+      claims += 1;
+      if (new Set(fact.refs ?? []).size >= 2) backed += 1;
+    }
   }
+  const sites = new Set(
+    (doc.sources ?? []).filter((source) => source.site !== 'official-list').map((source) => source.site),
+  );
   return {
     total: trophies.length,
     grades: gradeCounts(trophies),
@@ -79,16 +111,22 @@ export function auditStats(doc) {
     guidesCited: trophies.filter((trophy) => citedRefsFor(trophy).length > 0).length,
     steps,
     citedSteps,
+    claims,
+    backed,
     sourceCount: (doc.sources ?? []).length,
+    sourcePages: (doc.sources ?? []).length,
+    siteCount: sites.size,
     readDate: doc.read_date ?? '',
     missable: trophies.filter((trophy) => trophy.missable).length,
     watch: trophies.filter((trophy) => trophy.story_window).length,
     unconfirmed: trophies.filter((trophy) => trophy.unconfirmed).length,
     disagree: trophies.filter((trophy) => trophy.disagreement).length,
+    disputes: trophies.filter((trophy) => trophy.disagreement).length,
   };
 }
 
 export function searchTextFor(trophy) {
   const stepText = (trophy.steps ?? []).map((step) => step.t).join(' ');
-  return `${trophy.name} ${trophy.description} ${trophy.guide} ${stepText}`.toLowerCase();
+  const factText = (trophy.facts ?? []).map((fact) => fact.t).join(' ');
+  return `${trophy.name} ${trophy.description} ${trophy.guide} ${stepText} ${factText}`.toLowerCase();
 }

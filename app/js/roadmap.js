@@ -1,13 +1,11 @@
-// The platinum roadmap and the missable / story-window lists, both built
-// from the official trophy descriptions and the published roadmap guides
-// named in the app footer.
+// The platinum roadmap and the missable / story-window lists.
 
 export const ROADMAP_STAGES = [
   {
     stage: 1,
     short: 'Story & strands',
     title: 'Stage 1 — Story, strands as they appear, and the one missable',
-    text: 'Play the five chapters and the named missions. Take stranger strands when they are offered (one source reports story windows on their chains; another says the quest givers return — both versions are shown on those trophies), start meditation in Chapter 1, and scan vehicles and WAiNK locations as you travel. Save manually at each chapter: there is no mission replay.',
+    text: 'Play the five chapters and the named missions. Take stranger strands when offered (sources disagree on story windows — both versions are on those trophies), start meditation in Chapter 1, and scan vehicles and WAiNK as you travel. Save manually at each chapter: no mission replay.',
   },
   {
     stage: 2,
@@ -19,7 +17,7 @@ export const ROADMAP_STAGES = [
     stage: 3,
     short: 'Feats & one-offs',
     title: 'Stage 3 — Feats, partners and hidden one-offs',
-    text: 'The specific feats and the vague hidden trophies: partner wanted-level runs, the Combat Focus five, the showroom smash, the Ocean Beach cocktail, and the hidden trophies whose sources do not pin a trigger down (this app says so on each of those, rather than inventing one).',
+    text: 'The specific feats and the hidden one-offs: partner wanted-level runs, the Combat Focus five, the showroom smash, the Ocean Beach cocktail, the tank steal, the jet steal and the UFO night.',
   },
   {
     stage: 4,

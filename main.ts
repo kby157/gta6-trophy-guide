@@ -26,6 +26,10 @@ const out = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
 // in a guide whose trophy data is incomplete, so a truncated data file can
 // never reach the gate dressed as a finished entry. It reads only the file
 // beside this program and changes nothing that is copied to the output.
+// The fact-level half mirrors the app's own audit definitions in
+// app/js/data.js (claims = atomic facts; backed = facts whose refs hold at
+// least two distinct registry numbers), so the numbers this check logs are
+// the numbers the app prints on its cover tiles.
 function checkTrophyDataComplete() {
   const raw = readFileSync(join(here, 'app', 'data', 'trophies.json'), 'utf8');
   const doc = JSON.parse(raw);
@@ -35,19 +39,42 @@ function checkTrophyDataComplete() {
   }
   const knownSources = new Set((doc.sources ?? []).map((source) => source.n));
   if (knownSources.size === 0) throw new Error('the source registry is empty');
+  let claims = 0;
+  let backed = 0;
+  let steps = 0;
   for (const trophy of trophies) {
     if (typeof trophy.name !== 'string' || trophy.name.trim() === '') throw new Error('a trophy has no name');
     if (typeof trophy.guide !== 'string' || trophy.guide.trim().length < 40) throw new Error(`guide summary too short for ${trophy.name}`);
     if (!Array.isArray(trophy.steps) || trophy.steps.length < 2) throw new Error(`guide steps missing for ${trophy.name}`);
     for (const step of trophy.steps) {
+      steps += 1;
       if (typeof step.t !== 'string' || step.t.trim() === '') throw new Error(`a blank step in ${trophy.name}`);
       if (!Array.isArray(step.refs) || step.refs.length === 0) throw new Error(`an uncited step in ${trophy.name}`);
       for (const ref of step.refs) if (!knownSources.has(ref)) throw new Error(`step in ${trophy.name} cites unknown source ${ref}`);
     }
+    if (!Array.isArray(trophy.facts) || trophy.facts.length < 8) throw new Error(`fewer than 8 facts for ${trophy.name}`);
+    for (const fact of trophy.facts) {
+      claims += 1;
+      if (typeof fact.t !== 'string' || fact.t.trim() === '') throw new Error(`a blank fact in ${trophy.name}`);
+      if (!Array.isArray(fact.refs) || fact.refs.length === 0) throw new Error(`an uncited fact in ${trophy.name}`);
+      for (const ref of fact.refs) if (!knownSources.has(ref)) throw new Error(`fact in ${trophy.name} cites unknown source ${ref}`);
+      if (new Set(fact.refs).size >= 2) backed += 1;
+    }
   }
-  return trophies.length;
+  const sites = new Set(
+    (doc.sources ?? []).filter((source) => source.site !== 'official-list').map((source) => source.site),
+  );
+  return {
+    trophies: trophies.length,
+    claims,
+    backed,
+    steps,
+    disputes: trophies.filter((trophy) => trophy.disagreement).length,
+    sourcePages: (doc.sources ?? []).length,
+    siteCount: sites.size,
+  };
 }
-const checkedTrophyCount = checkTrophyDataComplete();
+const audit = checkTrophyDataComplete();
 
 mkdirSync(out, { recursive: true });
 cpSync(join(here, 'app'), join(out, 'app'), { recursive: true });
@@ -75,4 +102,5 @@ function checkScreenshotsHandedIn() {
   return shots.length;
 }
 const handedInShotCount = checkScreenshotsHandedIn();
-console.log(`Leonida Platinum Tracker handed in: ${checkedTrophyCount} trophies, ${handedInShotCount} screenshots.`);
+console.log(`Leonida Platinum Tracker handed in: ${audit.trophies} trophies, ${handedInShotCount} screenshots.`);
+console.log(`Audit (same definitions as the app): ${audit.claims} claims, ${audit.backed} backed by 2+ sources, ${audit.sourcePages} source pages across ${audit.siteCount} sites, ${audit.disputes} disputes, ${audit.steps} steps.`);

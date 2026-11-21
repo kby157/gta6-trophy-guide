@@ -78,9 +78,8 @@ export async function importProgressFromFile(store, file) {
   store.replaceState(state);
 }
 
-// Demo seeding for screenshots and first-look checks: ?demo=1 marks a
-// believable mid-run state (13 earned, counters part way) without touching
-// a real saved state unless the visitor then changes something.
+// Demo seeding for screenshots: ?demo=1 marks a believable mid-run
+// state (13 earned, counters part way) on an empty store only.
 export function seedDemoStateIfAsked(store) {
   const params = new URLSearchParams(location.search);
   if (params.get('demo') !== '1') return;

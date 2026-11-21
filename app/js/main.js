@@ -1,12 +1,10 @@
-// Boot and wiring: loads the data, builds the kind filter chips from the
-// data's own categories (so their counts are always true), holds the
-// current view state, and re-renders every view whenever progress or a
-// control changes.
+// Boot and wiring: loads the data, builds the kind filter chips, holds
+// the view state, and re-renders every view on any change.
 
 import { KIND_LABELS, KIND_ORDER, loadTrophyData } from './data.js';
 import { createStore, exportProgressToFile, importProgressFromFile, seedDemoStateIfAsked } from './store.js';
 import { filterTrophies, nextUpTrophies } from './filters.js';
-import { renderAudit, renderChecklist, renderDetail, renderNextUp, renderProgress, renderRoadmap, renderSources, renderStageStrip } from './views.js';
+import { renderAudit, renderChecklist, renderDetail, renderNextUp, renderProgress, renderRail, renderRoadmap, renderSources, renderStageStrip } from './views.js';
 
 const store = createStore();
 seedDemoStateIfAsked(store);
@@ -67,6 +65,7 @@ function renderAll() {
     renderAll();
   });
   renderDetail(doc, currentTrophy(), store);
+  renderRail(doc, currentTrophy());
   renderRoadmap(all, store);
   renderNextUp(nextUp);
   document.getElementById('checklist-view').hidden = view.panel !== 'checklist';

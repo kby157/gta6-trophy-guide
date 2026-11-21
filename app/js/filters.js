@@ -1,7 +1,5 @@
-// Filtering and the spoiler rule. Spoiler protection hides the name and
-// description of a hidden story trophy until that trophy is earned.
-// Two filter axes: the trophy's kind (from the data's own categories) and
-// its status (missable/watch, unconfirmed, sources disagree, online).
+// Filtering and the spoiler rule: two axes (kind, status); spoiler
+// protection hides a hidden trophy's name and description until earned.
 
 import { isHiddenStoryTrophy, searchTextFor } from './data.js';
 

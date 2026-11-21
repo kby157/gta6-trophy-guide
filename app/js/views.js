@@ -1,9 +1,7 @@
-// Rendering: the audit strip, the checklist rows with their citation
-// markers, the guide pane (numbered steps, each citing its sources, plus
-// any disagreement box), the roadmap, the Next Up planner, the stage
-// strip and the source registry.
+// Rendering: audit tiles, checklist rows, the guide pane (facts, steps,
+// disagreement box), the sources rail, roadmap, Next Up and stage strip.
 
-import { auditStats, citedRefsFor, hasCounter, sourceByNumber, sourceCoverage } from './data.js';
+import { auditStats, citedRefsFor, guideBackingFor, hasCounter, sourceByNumber, sourceCoverage } from './data.js';
 import { shouldMaskForSpoilers } from './filters.js';
 import { ROADMAP_STAGES, missableAndWindowTrophies, missableLabel, trophiesForStage } from './roadmap.js';
 
@@ -17,11 +15,24 @@ function element(tag, className, text) {
 export function renderAudit(doc) {
   const audit = auditStats(doc);
   const grades = audit.grades;
+  const tiles = document.getElementById('audit-tiles');
+  tiles.replaceChildren();
+  const tileData = [
+    [`${audit.claims}`, 'atomic claims, each cited'],
+    [`${audit.backed}`, 'claims backed by 2+ sources'],
+    [`${audit.sourcePages} · ${audit.siteCount}`, 'source pages · sites read'],
+    [`${audit.disputes}`, 'disputes shown both ways'],
+  ];
+  for (const [big, small] of tileData) {
+    const tile = element('div', 'audit-tile');
+    tile.append(element('span', 'audit-big', big), element('span', 'audit-small', small));
+    tiles.append(tile);
+  }
   document.getElementById('audit-bar').textContent =
     `AUDIT · ${audit.total} official · ${grades.platinum}P ${grades.gold}G ${grades.silver}S ${grades.bronze}B · ${audit.hidden} hidden · ` +
-    `guides citing a source ${audit.guidesCited}/${audit.total} · steps cited ${audit.citedSteps}/${audit.steps} · ` +
-    `${audit.sourceCount} sources read ${audit.readDate} · possibly missable ${audit.missable} · watch ${audit.watch} · ` +
-    `unconfirmed ${audit.unconfirmed} · sources disagree on ${audit.disagree}`;
+    `guides citing ${audit.guidesCited}/${audit.total} · steps cited ${audit.citedSteps}/${audit.steps} · ` +
+    `${audit.sourceCount} sources read ${audit.readDate} · missable ${audit.missable} · watch ${audit.watch} · ` +
+    `unconfirmed ${audit.unconfirmed} · disagree ${audit.disagree}`;
 }
 
 export function renderProgress(trophies, store, nextUp) {
@@ -53,7 +64,7 @@ export function renderChecklist(trophies, visible, view, store, onSelect) {
   const list = document.getElementById('trophy-list');
   list.replaceChildren();
   document.getElementById('list-summary').textContent =
-    `Showing ${visible.length} of ${trophies.length} trophies. Click a row for its stepped guide and sources; tick the box to mark it earned. Progress saves in this browser.`;
+    `Showing ${visible.length} of ${trophies.length} trophies. Click a row for its guide and sources; tick the box to mark earned.`;
   document.getElementById('online-note').hidden = view.status !== 'online';
   for (const trophy of visible) {
     const isEarned = store.isEarned(trophy.id);
@@ -103,8 +114,7 @@ export function renderDetail(doc, trophy, store) {
     return;
   }
   const isEarned = store.isEarned(trophy.id);
-  // The checklist masks hidden story trophies under spoiler protection;
-  // opening one here is the reader's own choice, so the pane shows it whole.
+  // Opening a masked trophy here is the reader's own choice; show it whole.
   panel.append(element('p', 'kicker', `Trophy ${trophy.id} of 55 · ${trophy.grade}${trophy.hidden ? ' · hidden on PlayStation' : ''} · Stage ${trophy.stage}`));
   panel.append(element('h2', '', trophy.name));
   panel.append(element('p', 'official', `Official description: “${trophy.description}”`));
@@ -114,10 +124,11 @@ export function renderDetail(doc, trophy, store) {
   panel.append(element('p', 'guide-text', trophy.guide));
   if (trophy.disagreement) {
     const box = element('div', 'disagree-box');
-    box.append(element('p', 'disagree-title', 'Sources disagree — both versions shown'));
+    box.append(element('p', 'disagree-title', 'Sources disagree'));
     box.append(element('p', '', trophy.disagreement));
     panel.append(box);
   }
+  panel.append(element('h3', 'facts-title', `Steps (${(trophy.steps ?? []).length})`));
   const steps = element('ol', 'steps');
   for (const step of trophy.steps ?? []) {
     const item = element('li');
@@ -127,6 +138,18 @@ export function renderDetail(doc, trophy, store) {
     steps.append(item);
   }
   panel.append(steps);
+  const facts = trophy.facts ?? [];
+  if (facts.length) {
+    panel.append(element('h3', 'facts-title', `Facts (${facts.length})`));
+    const factList = element('ul', 'facts');
+    for (const fact of facts) {
+      const item = element('li');
+      item.append(document.createTextNode(fact.t));
+      item.append(element('span', 'step-refs', ` [${(fact.refs ?? []).join('] [')}]`));
+      factList.append(item);
+    }
+    panel.append(factList);
+  }
   if (hasCounter(trophy)) {
     const box = element('div', 'counter-box');
     const minus = element('button', '', '−');
@@ -148,17 +171,28 @@ export function renderDetail(doc, trophy, store) {
   done.type = 'button';
   done.addEventListener('click', () => store.toggleEarned(trophy.id));
   panel.append(done);
-  const coverage = sourceCoverage(doc);
-  const sources = element('div', 'sources');
-  sources.append(element('p', '', 'Sources for this guide'));
-  const sourceList = element('ul');
-  for (const ref of citedRefsFor(trophy)) {
-    const source = sourceByNumber(doc, ref);
-    if (!source) continue;
-    sourceList.append(element('li', '', `[${ref}] ${source.name} — cited by ${coverage.get(ref) ?? 0} of 55 guides`));
+}
+
+// The right-hand rail: the sources the selected guide cites, each with how
+// many of that guide's facts and steps it backs.
+export function renderRail(doc, trophy) {
+  const rail = document.getElementById('sources-rail');
+  rail.replaceChildren();
+  rail.append(element('h3', 'rail-title', 'Sources behind this guide'));
+  if (!trophy) {
+    rail.append(element('p', 'rail-empty', 'Select a trophy to see the sources its guide rests on.'));
+    return;
   }
-  sources.append(sourceList);
-  panel.append(sources);
+  const { rows, factTotal, stepTotal } = guideBackingFor(doc, trophy);
+  rail.append(element('p', 'rail-summary', `${rows.length} sources back this guide's ${factTotal} facts and ${stepTotal} steps.`));
+  const list = element('ul', 'rail-list');
+  for (const row of rows) {
+    const item = element('li', 'rail-entry');
+    item.append(element('span', 'rail-name', `[${row.n}] ${row.source.name}`));
+    item.append(element('span', 'rail-counts', `backs ${row.facts} facts · ${row.steps} steps`));
+    list.append(item);
+  }
+  rail.append(list);
 }
 
 export function renderRoadmap(trophies, store) {
@@ -221,7 +255,8 @@ export function renderSources(doc) {
   }
   const audit = auditStats(doc);
   document.getElementById('audit-explainer').textContent =
-    `Audit, counted from the data on this page: ${audit.guidesCited} of ${audit.total} guides cite at least one source; ` +
+    `Audit, counted from the data on this page: ${audit.claims} atomic claims across the 55 guides, ` +
+    `${audit.backed} of them backed by two or more distinct sources; ${audit.guidesCited} of ${audit.total} guides cite at least one source; ` +
     `${audit.citedSteps} of ${audit.steps} steps carry a citation; ${audit.disagree} trophies show a disagreement box; ` +
     `${audit.unconfirmed} are marked unconfirmed because no source read pins their trigger down.`;
 }

@@ -12,7 +12,7 @@
   <div class="masthead">
     <p class="kicker">Grand Theft Auto VI · PlayStation 5 · Offline guide &amp; tracker</p>
     <h1>Leonida Platinum Tracker</h1>
-    <p class="standfirst">All 55 official trophies with a cited guide for each one, a five-stage roadmap to the platinum, and the one trophy published guides flag as possibly missable — flagged first, not buried.</p>
+    <p class="standfirst">All 55 official trophies, each with a stepped guide and cited atomic facts — and the one trophy published guides flag as possibly missable, flagged first, not buried.</p>
   </div>
   <section id="progress-panel" aria-label="Your progress">
     <p id="progress-big">0 of 55 earned</p>
@@ -22,7 +22,8 @@
   </section>
 </header>
 
-<p id="audit-bar" aria-label="Guide audit"></p>
+<section id="audit-tiles" aria-label="Guide audit totals"></section>
+<p id="audit-bar" aria-label="Guide audit detail"></p>
 
 <nav id="view-tabs" aria-label="Views">
   <button type="button" data-view="checklist" class="tab active">Checklist &amp; guides</button>
@@ -68,6 +69,7 @@
   <article id="detail-panel" aria-label="Trophy guide">
     <p class="detail-empty">Select a trophy to read its guide and its sources.</p>
   </article>
+  <aside id="sources-rail" aria-label="Sources behind the selected guide"></aside>
 </main>
 
 <section id="roadmap-view" hidden>
@@ -75,7 +77,7 @@
   <p class="roadmap-intro">One playthrough, no difficulty setting and no mission replay, so save manually at the start of each chapter and keep cheats off (they disable trophies and saving). Published roadmaps put the platinum at roughly 200 hours and call A Long Road, the 100% trophy, the hardest on the list. Sources: GTABase Trophy Guide; PowerPyx roadmap; Push Square Trophy Guide &amp; Roadmap.</p>
   <div id="roadmap-stages"></div>
   <h2>Missable &amp; watch trophies</h2>
-  <p class="roadmap-intro">Only one trophy is reported as possibly missable by the published guides: Positive Mental Attitude. Five stranger finales carry a WATCH flag instead: one source reports their chains have windows tied to story progress, another says the quest givers return after the story. Both versions are shown on each of those trophies; the safe play is to start the chains when they are offered.</p>
+  <p class="roadmap-intro">Only one trophy is reported as possibly missable: Positive Mental Attitude. Five stranger finales carry a WATCH flag: one source reports windows on their chains, another says the quest givers return after the story. Both versions are shown on each trophy; start chains when offered.</p>
   <ul id="missable-list"></ul>
 </section>
 
@@ -87,13 +89,13 @@
 
 <section id="sources-view" hidden>
   <h2>Sources &amp; audit</h2>
-  <p class="roadmap-intro">Every guide in this app is written in numbered steps, and every step ends with the numbered sources it rests on. The registry below is the whole source set; the count beside each one is how many of the 55 guides cite it, counted from the data itself. Where sources disagree, the trophy shows both versions in a disagreement box instead of picking a winner quietly.</p>
+  <p class="roadmap-intro">Every guide is written in numbered steps, and every step and fact ends with the numbered sources it rests on. The registry is the whole source set; the count beside each source is how many of the 55 guides cite it, counted from the data. Where sources disagree, the trophy shows both versions instead of picking a winner quietly.</p>
   <ol id="sources-list"></ol>
   <p class="roadmap-intro" id="audit-explainer"></p>
 </section>
 
 <footer>
-  <p>Guides are written for this app in our own words and name their sources beside each trophy. Official names and descriptions are shown as PlayStation publishes them. List sources: Exophase and PSNProfiles. Roadmap sources: GTABase, PowerPyx and Push Square, read 2026-11-20. Where no published source pins a step down, the guide says so instead of inventing one. No Rockstar Games logo or artwork is used; the look of this app is its own.</p>
+  <p>Guides are written for this app in our own words and name their sources beside each trophy. Official names and descriptions are shown as PlayStation publishes them. The registry holds 28 pages across 20 sites, read or re-read on 21 November 2026 (a few list pages were first read on 20 November). Where no source pins a step down, the guide says so. No Rockstar Games logo or artwork is used; the look is this app's own.</p>
 </footer>
 
 <script type="module" src="js/main.js"></script>
