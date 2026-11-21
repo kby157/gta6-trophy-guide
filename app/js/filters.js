@@ -15,7 +15,7 @@ export function matchesStatusFilter(trophy, status) {
   if (status === 'any') return true;
   if (status === 'watch') return trophy.missable === true || trophy.story_window === true;
   if (status === 'unconfirmed') return trophy.unconfirmed === true;
-  if (status === 'disagree') return typeof trophy.disagreement === 'string';
+  if (status === 'disagree') return Boolean(trophy.disagreement);
   if (status === 'online') return trophy.kind === 'online';
   return true;
 }

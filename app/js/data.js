@@ -42,10 +42,14 @@ export function citedRefsFor(trophy) {
   const refs = new Set();
   for (const step of trophy.steps ?? []) for (const ref of step.refs ?? []) refs.add(ref);
   for (const fact of trophy.facts ?? []) for (const ref of fact.refs ?? []) refs.add(ref);
-  // Prose counts too: [n] markers in the guide and disagreement text cite a
-  // source just as a structured ref does.
-  for (const prose of [trophy.guide, trophy.disagreement]) {
-    for (const marker of (prose ?? '').matchAll(/\[(\d+)\]/g)) refs.add(Number(marker[1]));
+  // Prose counts too: [n] markers in the guide text cite a source just as a
+  // structured ref does; a disagreement's refs sit on its sides.
+  for (const marker of (trophy.guide ?? '').matchAll(/\[(\d+)\]/g)) refs.add(Number(marker[1]));
+  const dispute = trophy.disagreement;
+  if (typeof dispute === 'string') {
+    for (const marker of dispute.matchAll(/\[(\d+)\]/g)) refs.add(Number(marker[1]));
+  } else if (dispute) {
+    for (const side of dispute.sides ?? []) for (const ref of side.refs ?? []) refs.add(ref);
   }
   return [...refs].sort((a, b) => a - b);
 }
@@ -61,6 +65,23 @@ export function sourceCoverage(doc) {
     for (const ref of citedRefsFor(trophy)) coverage.set(ref, (coverage.get(ref) ?? 0) + 1);
   }
   return coverage;
+}
+
+// Per source: facts (claims) citing it, and how many of those are 2+ backed.
+export function sourceClaimCounts(doc) {
+  const counts = new Map();
+  for (const trophy of doc.trophies) {
+    for (const fact of trophy.facts ?? []) {
+      const backed = new Set(fact.refs ?? []).size >= 2;
+      for (const ref of fact.refs ?? []) {
+        const entry = counts.get(ref) ?? { claims: 0, backed: 0 };
+        entry.claims += 1;
+        if (backed) entry.backed += 1;
+        counts.set(ref, entry);
+      }
+    }
+  }
+  return counts;
 }
 
 // Per guide: facts and steps each source backs (the rail).

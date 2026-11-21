@@ -1,6 +1,6 @@
 // Rendering: tiles, checklist, guide pane, rail, roadmap, Next Up, stages.
 
-import { auditStats, citedRefsFor, guideBackingFor, hasCounter, sourceByNumber, sourceCoverage } from './data.js';
+import { auditStats, citedRefsFor, guideBackingFor, hasCounter, sourceByNumber, sourceClaimCounts, sourceCoverage } from './data.js';
 import { shouldMaskForSpoilers } from './filters.js';
 import { ROADMAP_STAGES, missableAndWindowTrophies, missableLabel, trophiesForStage } from './roadmap.js';
 
@@ -122,9 +122,20 @@ export function renderDetail(doc, trophy, store) {
   if (trophy.unconfirmed) panel.append(element('p', 'flag flag-quiet', 'UNCONFIRMED — no source read pins this trigger down; the steps say so.'));
   panel.append(element('p', 'guide-text', trophy.guide));
   if (trophy.disagreement) {
+    const dispute = trophy.disagreement;
     const box = element('div', 'disagree-box');
-    box.append(element('p', 'disagree-title', 'Sources disagree'));
-    box.append(element('p', '', trophy.disagreement));
+    box.append(element('p', 'disagree-title', 'Sources disagree — each version shown with its sources'));
+    const sides = element('div', 'dispute-sides');
+    (dispute.sides ?? []).forEach((side, index) => {
+      const col = element('div', 'dispute-side');
+      col.append(element('p', 'dispute-label', `Side ${'ABC'[index] ?? index + 1}`));
+      const text = element('p', 'dispute-text', side.t);
+      text.append(element('span', 'step-refs', ` [${(side.refs ?? []).join('] [')}]`));
+      col.append(text);
+      sides.append(col);
+    });
+    box.append(sides);
+    box.append(element('p', 'dispute-call', dispute.call));
     panel.append(box);
   }
   panel.append(element('h3', 'facts-title', `Steps (${(trophy.steps ?? []).length})`));
@@ -211,13 +222,25 @@ export function renderRoadmap(trophies, store) {
   }
   const list = document.getElementById('missable-list');
   list.replaceChildren();
-  for (const trophy of missableAndWindowTrophies(trophies)) {
-    const item = element('li');
-    item.append(
-      element('strong', '', `${trophy.name} — `),
-      document.createTextNode(`${missableLabel(trophy)}. ${trophy.guide}`),
+  const flagged = missableAndWindowTrophies(trophies)
+    .slice()
+    .sort((a, b) => Number(b.missable === true) - Number(a.missable === true));
+  for (const trophy of flagged) {
+    const card = element('li', 'missable-card');
+    const head = element('p', 'missable-head');
+    head.append(
+      element('strong', '', trophy.name),
+      element('span', trophy.missable ? 'flag' : 'flag flag-quiet', trophy.missable ? ' ⚠ POSSIBLY MISSABLE' : ' WATCH'),
     );
-    list.append(item);
+    card.append(head);
+    card.append(element('p', 'missable-window', `Window: ${missableLabel(trophy)} (Stage ${trophy.stage}).`));
+    const firstStep = (trophy.steps ?? [])[0];
+    if (firstStep) card.append(element('p', 'missable-protect', `Protect it: ${firstStep.t}`));
+    const sides = trophy.disagreement?.sides ?? [];
+    if (sides.length > 1) {
+      card.append(element('p', 'missable-split', `Sources split: ${sides.map((side) => side.t).join(' — vs — ')}`));
+    }
+    list.append(card);
   }
 }
 
@@ -241,13 +264,18 @@ export function renderNextUp(nextUp) {
 
 export function renderSources(doc) {
   const coverage = sourceCoverage(doc);
+  const claimCounts = sourceClaimCounts(doc);
   const list = document.getElementById('sources-list');
   list.replaceChildren();
   for (const source of doc.sources ?? []) {
     const item = element('li', 'source-entry');
+    const counts = claimCounts.get(source.n) ?? { claims: 0, backed: 0 };
+    const readNote = /(?:Re-)?[Rr]ead [^.;]*2026/.test(source.detail) ? '' : ` Read ${doc.read_date ?? ''}.`;
     item.append(
       element('strong', '', `[${source.n}] ${source.name}`),
-      document.createTextNode(` — ${source.detail} Cited by ${coverage.get(source.n) ?? 0} of 55 guides.`),
+      document.createTextNode(
+        ` — ${source.detail} Cited by ${coverage.get(source.n) ?? 0} of 55 guides; backs ${counts.claims} claims (${counts.backed} of them backed by 2+ sources).${readNote}`,
+      ),
     );
     list.append(item);
   }

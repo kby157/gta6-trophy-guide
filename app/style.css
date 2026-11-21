@@ -163,6 +163,16 @@ footer { padding: 14px 20px 26px; color: var(--muted); font-size: 13.5px; border
 }
 .disagree-box p { margin: 4px 0; }
 .disagree-title { font-weight: 700; color: #7a5a14; }
+.dispute-sides { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 7px; margin: 5px 0; }
+.dispute-side { background: #fffdf4; border: 1px solid #d9c07a; border-radius: 8px; padding: 5px 8px; }
+.dispute-label { font-weight: 700; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #7a5a14; margin: 0 0 2px; }
+.dispute-text { margin: 0; line-height: 1.35; }
+.dispute-call { font-weight: 700; background: #7a5a14; color: #fff8e6; border-radius: 7px; padding: 5px 9px; }
+.missable-card p { margin: 3px 0; }
+.missable-head { font-size: 15.5px; }
+.missable-window { font-weight: 600; }
+.missable-protect { line-height: 1.4; }
+.missable-split { color: var(--muted); font-size: 13px; line-height: 1.4; }
 #sources-list { display: grid; gap: 8px; padding-left: 22px; }
 #sources-list li { background: var(--pane); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; line-height: 1.45; }
 @media (max-width: 900px) {

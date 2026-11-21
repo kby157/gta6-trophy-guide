@@ -30,8 +30,8 @@ const out = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
 // app/js/data.js (claims = atomic facts; backed = facts whose refs hold at
 // least two distinct registry numbers), so the numbers this check logs are
 // the numbers the app prints on its cover tiles. Citations are read the
-// app's way as well — structured refs plus the [n] markers in guide and
-// disagreement prose — and the registry must earn its page count: every
+// app's way as well — structured refs (steps, facts, disagreement sides)
+// plus the [n] markers in guide prose — and the registry must earn its page count: every
 // cited number has to resolve, and every registered page has to be cited
 // by at least one trophy, or the hand-in fails here.
 function checkTrophyDataComplete() {
@@ -71,11 +71,29 @@ function checkTrophyDataComplete() {
       }
       if (new Set(fact.refs).size >= 2) backed += 1;
     }
-    for (const prose of [trophy.guide, trophy.disagreement]) {
-      for (const marker of (prose ?? '').matchAll(/\[(\d+)\]/g)) {
-        const ref = Number(marker[1]);
-        if (!knownSources.has(ref)) throw new Error(`prose in ${trophy.name} cites unknown source ${ref}`);
-        citedAnywhere.add(ref);
+    for (const marker of (trophy.guide ?? '').matchAll(/\[(\d+)\]/g)) {
+      const ref = Number(marker[1]);
+      if (!knownSources.has(ref)) throw new Error(`prose in ${trophy.name} cites unknown source ${ref}`);
+      citedAnywhere.add(ref);
+    }
+    // A disagreement is structured: two or three sides, each carrying its
+    // own refs, plus the verdict line. Every side ref must resolve, exactly
+    // as a step or fact ref must.
+    const dispute = trophy.disagreement;
+    if (dispute !== undefined && dispute !== null) {
+      if (typeof dispute !== 'object' || !Array.isArray(dispute.sides) || dispute.sides.length < 2 || dispute.sides.length > 3) {
+        throw new Error(`disagreement for ${trophy.name} must hold 2 or 3 sides`);
+      }
+      if (typeof dispute.call !== 'string' || !dispute.call.startsWith('Our call: ')) {
+        throw new Error(`disagreement for ${trophy.name} has no verdict line`);
+      }
+      for (const side of dispute.sides) {
+        if (typeof side.t !== 'string' || side.t.trim() === '') throw new Error(`a blank dispute side in ${trophy.name}`);
+        if (!Array.isArray(side.refs) || side.refs.length === 0) throw new Error(`an uncited dispute side in ${trophy.name}`);
+        for (const ref of side.refs) {
+          if (!knownSources.has(ref)) throw new Error(`dispute side in ${trophy.name} cites unknown source ${ref}`);
+          citedAnywhere.add(ref);
+        }
       }
     }
   }
